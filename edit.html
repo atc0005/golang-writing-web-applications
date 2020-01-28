@@ -1,0 +1,18 @@
+<!--
+
+    This is a Go template/html template file.
+
+    Template directives are enclosed in double curly braces.
+
+    The `printf "%s" .Body` instruction is a function call that outputs
+    .Body as a string instead of a stream of bytes, the same as a call to
+    `fmt.Printf()`
+
+-->
+
+<h1>Editing {{.Title}}</h1>
+
+<form action="/save/{{.Title}}" method="POST">
+<div><textarea name="body" rows="20" cols="80">{{print "%s" .Body}}</textarea></div>
+<div><input type="submit" value="Save"></div>
+</form>
