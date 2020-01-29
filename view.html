@@ -1,0 +1,33 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>{{.Title}}</title>
+  <meta name="description" content="Writing Web Applications - The Go Programming Language">
+  <meta name="author" content="golang.org">
+
+</head>
+<body>
+
+<!--
+
+    This is a Go template/html template file.
+
+    Template directives are enclosed in double curly braces.
+
+    The `printf "%s" .Body` instruction is a function call that outputs
+    .Body as a string instead of a stream of bytes, the same as a call to
+    `fmt.Printf()`
+
+-->
+
+<h1>{{.Title}}</h1>
+
+<p>[<a href="/edit/{{.Title}}">edit</a>]</p>
+
+<div>{{printf "%s" .Body}}</div>
+
+</body>
+</html>

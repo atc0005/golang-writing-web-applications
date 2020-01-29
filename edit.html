@@ -1,0 +1,34 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>Editing {{.Title}}</title>
+  <meta name="description" content="Writing Web Applications - The Go Programming Language">
+  <meta name="author" content="golang.org">
+
+</head>
+<body>
+
+<!--
+
+    This is a Go template/html template file.
+
+    Template directives are enclosed in double curly braces.
+
+    The `printf "%s" .Body` instruction is a function call that outputs
+    .Body as a string instead of a stream of bytes, the same as a call to
+    `fmt.Printf()`
+
+-->
+
+<h1>Editing {{.Title}}</h1>
+
+<form action="/save/{{.Title}}" method="POST">
+<div><textarea name="body" rows="20" cols="80">{{printf "%s" .Body}}</textarea></div>
+<div><input type="submit" value="Save"></div>
+</form>
+
+</body>
+</html>
