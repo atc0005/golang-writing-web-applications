@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -35,13 +34,8 @@ func loadPage(title string) (*Page, error) {
 	return &Page{Title: title, Body: body}, nil
 }
 
-func viewHandler(w http.ResponseWriter, r *http.Request) {
-	title, err := getTitle(w, r)
-	if err != nil {
-		// what does calling return here accomplish? Is err passed up the
-		// stack or does this effectively bail out?
-		return
-	}
+func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
+
 	p, err := loadPage(title)
 
 	// If the requested Page doesn't exist, redirect he client to the edit
@@ -53,14 +47,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "view", p)
 }
 
-func editHandler(w http.ResponseWriter, r *http.Request) {
-
-	title, err := getTitle(w, r)
-	if err != nil {
-		// what does calling return here accomplish? Is err passed up the
-		// stack or does this effectively bail out?
-		return
-	}
+func editHandler(w http.ResponseWriter, r *http.Request, title string) {
 
 	p, err := loadPage(title)
 	if err != nil {
@@ -74,14 +61,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 // field, `Body`, are stored in a new Page. The `save()` method is then called
 // to write the data to a file, and the client is redirected to the `/view/`
 // page.
-func saveHandler(w http.ResponseWriter, r *http.Request) {
-
-	title, err := getTitle(w, r)
-	if err != nil {
-		// what does calling return here accomplish? Is err passed up the
-		// stack or does this effectively bail out?
-		return
-	}
+func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 
 	// fetch provided content in the "body" HTML input field
 	body := r.FormValue("body")
@@ -89,7 +69,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	// For the Body field, we must convert `body` to a slice of bytes in order
 	// to match the struct field type
 	p := &Page{Title: title, Body: []byte(body)}
-	err = p.save()
+	err := p.save()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -107,30 +87,28 @@ func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
 	}
 }
 
-func getTitle(w http.ResponseWriter, r *http.Request) (string, error) {
-	m := validPath.FindStringSubmatch(r.URL.Path)
-	if m == nil {
-		http.NotFound(w, r)
-		return "", errors.New("Invalid Page Title")
+func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		m := validPath.FindStringSubmatch(r.URL.Path)
+		if m == nil {
+			http.NotFound(w, r)
+			return
+		}
+		fn(w, r, m[2])
 	}
-
-	// log.Println("m[1] is", m[1])
-	// log.Println("m[2] is", m[2])
-
-	return m[2], nil // The tile is the second subexpression
 }
 
 func main() {
 
 	// loads the page, displays edit form for new page if not existing page
-	http.HandleFunc("/view/", viewHandler)
+	http.HandleFunc("/view/", makeHandler(viewHandler))
 
 	// displays edit form for existing page, otherwise edit form for new page
-	http.HandleFunc("/edit/", editHandler)
+	http.HandleFunc("/edit/", makeHandler(editHandler))
 
 	// save the data entered into the edit form
 	// TODO
-	http.HandleFunc("/save/", saveHandler)
+	http.HandleFunc("/save/", makeHandler(saveHandler))
 
 	// listen on port 8080 on any interface, block until app is terminated
 	log.Fatal(http.ListenAndServe(":8000", nil))
