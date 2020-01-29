@@ -1,13 +1,19 @@
 package main
 
 import (
+	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"regexp"
 	"text/template"
 )
 
 var templates = template.Must(template.ParseFiles("edit.html", "view.html"))
+
+// subexpression 1 is one of edit, save or view
+// subexpression 2 is the page title that we are editing, saving or viewing
+var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
 
 // Page describes how page data will be stored in memory.
 type Page struct {
@@ -30,7 +36,12 @@ func loadPage(title string) (*Page, error) {
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
-	title := r.URL.Path[len("/view/"):]
+	title, err := getTitle(w, r)
+	if err != nil {
+		// what does calling return here accomplish? Is err passed up the
+		// stack or does this effectively bail out?
+		return
+	}
 	p, err := loadPage(title)
 
 	// If the requested Page doesn't exist, redirect he client to the edit
@@ -44,8 +55,12 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 
 func editHandler(w http.ResponseWriter, r *http.Request) {
 
-	// chop off "/edit/" from the URL and use what is left as the page title
-	title := r.URL.Path[len("/edit/"):]
+	title, err := getTitle(w, r)
+	if err != nil {
+		// what does calling return here accomplish? Is err passed up the
+		// stack or does this effectively bail out?
+		return
+	}
 
 	p, err := loadPage(title)
 	if err != nil {
@@ -61,8 +76,12 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 // page.
 func saveHandler(w http.ResponseWriter, r *http.Request) {
 
-	// chop off "/edit/" from the URL and use what is left as the page title
-	title := r.URL.Path[len("/edit/"):]
+	title, err := getTitle(w, r)
+	if err != nil {
+		// what does calling return here accomplish? Is err passed up the
+		// stack or does this effectively bail out?
+		return
+	}
 
 	// fetch provided content in the "body" HTML input field
 	body := r.FormValue("body")
@@ -70,7 +89,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	// For the Body field, we must convert `body` to a slice of bytes in order
 	// to match the struct field type
 	p := &Page{Title: title, Body: []byte(body)}
-	err := p.save()
+	err = p.save()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -86,6 +105,19 @@ func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func getTitle(w http.ResponseWriter, r *http.Request) (string, error) {
+	m := validPath.FindStringSubmatch(r.URL.Path)
+	if m == nil {
+		http.NotFound(w, r)
+		return "", errors.New("Invalid Page Title")
+	}
+
+	// log.Println("m[1] is", m[1])
+	// log.Println("m[2] is", m[2])
+
+	return m[2], nil // The tile is the second subexpression
 }
 
 func main() {
