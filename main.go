@@ -34,6 +34,13 @@ func loadPage(title string) (*Page, error) {
 	return &Page{Title: title, Body: body}, nil
 }
 
+// frontPageHandler redirects requests for / to /view/FrontPage
+func frontPageHandler(w http.ResponseWriter, r *http.Request) {
+	//log.Println("frontPageHandler triggered")
+	http.Redirect(w, r, "/view/FrontPage", http.StatusFound)
+	return
+}
+
 func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
 
 	p, err := loadPage(title)
@@ -99,6 +106,10 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 }
 
 func main() {
+
+	// bypass path validation provided by makeHandler (since we know what
+	// specific path we're working with) and just call the handler directly
+	http.HandleFunc("/", frontPageHandler)
 
 	// loads the page, displays edit form for new page if not existing page
 	http.HandleFunc("/view/", makeHandler(viewHandler))
