@@ -45,6 +45,8 @@ func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
 
 	p, err := loadPage(title)
 
+	createHTMLPageLinks(p)
+
 	// If the requested Page doesn't exist, redirect he client to the edit
 	// Page so the content may be created.
 	if err != nil {
@@ -76,6 +78,9 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	// For the Body field, we must convert `body` to a slice of bytes in order
 	// to match the struct field type
 	p := &Page{Title: title, Body: []byte(body)}
+
+	//createWikiPageLinks(p)
+
 	err := p.save()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -84,6 +89,45 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 
 	// redirect client to the newly saved page
 	http.Redirect(w, r, "/view/"+title, http.StatusFound)
+}
+
+// createWikiPageLinks performs an in-place modification to convert instances
+// of HTML page links to [PageName] wiki page links of the same name and
+// destination.
+func createWikiPageLinks(p *Page) {
+
+	log.Println("createWikiPageLinks called")
+
+	// <a href='/view/ThisPageDoesNotExist'>ThisPageDoesNotExist</a>
+	htmlPageLink := regexp.MustCompile("<a href='/view/([a-zA-Z0-9]+)'>[a-zA-Z0-9]+</a>")
+
+	p.Body = htmlPageLink.ReplaceAllFunc(p.Body, func(s []byte) []byte {
+
+		group := htmlPageLink.ReplaceAllString(string(s), "$1")
+		pageLink := "[" + group + "]"
+
+		log.Println("createWikiPageLinks - finished generating page link")
+
+		return []byte(pageLink)
+	})
+
+}
+
+// createHTMLPageLinks performs an in-place modification to convert instances
+// of [PageName] to HTML links of the same name and destination.
+func createHTMLPageLinks(p *Page) {
+
+	wikiPageLink := regexp.MustCompile("\\[([a-zA-Z]+)\\]")
+
+	p.Body = wikiPageLink.ReplaceAllFunc(p.Body, func(s []byte) []byte {
+
+		// this appears to replace "[PageName]" with "PageName"
+		group := wikiPageLink.ReplaceAllString(string(s), "$1")
+		pageLink := "<a href='/view/" + group + "'>" + group + "</a>"
+
+		return []byte(pageLink)
+	})
+
 }
 
 func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
