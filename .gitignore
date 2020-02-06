@@ -1,0 +1,12 @@
+# Ignore Windows binaries
+*.exe
+
+# Ignore compiled app binary
+golang-writing-web-applications
+
+# Ignore saved pages
+data/
+
+# We explicitly do not ignore templates since those should (normally)
+# be kept alongside the code in this repo
+# tmpl/
