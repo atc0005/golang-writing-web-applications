@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -141,9 +140,24 @@ func createWikiPageLinks(p *Page) {
 // of [PageName] to HTML links of the same name and destination.
 func createHTMLPageLinks(p *Page) {
 
+	// https://stackoverflow.com/questions/37462126/regex-match-markdown-link
+	markdownPageLink := regexp.MustCompile(`(?:__|[*#])|\[(.*?)\]\(.*?\)`)
 	wikiPageLink := regexp.MustCompile("\\[([a-zA-Z]+)\\]")
 
+	// ReplaceAllFunc returns a copy of src in which all matches of the Regexp
+	// have been replaced by the return value of function repl applied to the
+	// matched byte slice. The replacement returned by repl is substituted
+	// directly, without using Expand.
+
 	p.Body = wikiPageLink.ReplaceAllFunc(p.Body, func(s []byte) []byte {
+
+		// Don't perform substitution on Markdown page links
+		if markdownPageLink.Match(s) {
+			log.Println("Skipping match:", string(s))
+			return s
+		}
+
+		log.Println("Performing substitution against", string(s))
 
 		// this appears to replace "[PageName]" with "PageName"
 		group := wikiPageLink.ReplaceAllString(string(s), "$1")
@@ -164,9 +178,12 @@ func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
 	// 4) html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
 	// 5) Write "html" to "w"
 
-	var templateBuffer bytes.Buffer
+	//var templateBuffer bytes.Buffer
 
-	err := templates.ExecuteTemplate(&templateBuffer, tmpl+".html", p)
+	if strings.ToLower(tmpl) == "view" {
+		p.Body = blackfriday.Run(p.Body)
+	}
+	err := templates.ExecuteTemplate(w, tmpl+".html", p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -174,10 +191,8 @@ func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
 	// unsafe := blackfriday.Run(templateBuffer.Bytes())
 	// html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
 
-	output := blackfriday.Run(templateBuffer.Bytes())
-
 	// Send converted content to client
-	fmt.Fprint(w, string(output))
+	//fmt.Fprint(w, string(output))
 
 }
 
