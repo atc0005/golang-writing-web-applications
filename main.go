@@ -12,7 +12,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/microcosm-cc/bluemonday"
 	"gopkg.in/russross/blackfriday.v2"
 )
 
@@ -172,11 +171,13 @@ func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	unsafe := blackfriday.Run(templateBuffer.Bytes())
-	html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
+	// unsafe := blackfriday.Run(templateBuffer.Bytes())
+	// html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
+
+	output := blackfriday.Run(templateBuffer.Bytes())
 
 	// Send converted content to client
-	fmt.Fprint(w, string(html))
+	fmt.Fprint(w, string(output))
 
 }
 
