@@ -73,9 +73,9 @@ linting:
 
 	@echo "Running gofmt ..."
 
-	@test -z $(shell gofmt -l -e .) || echo "WARNING: gofmt linting errors found" \
+	@test -z $(shell gofmt -l -e .) || (echo "WARNING: gofmt linting errors found" \
 		&& gofmt -l -e -d . \
-		&& exit 1
+		&& exit 1 )
 
 	@echo "Running go vet ..."
 	@go vet ./...
