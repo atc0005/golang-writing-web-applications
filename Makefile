@@ -56,13 +56,11 @@ lintinstall:
 
 	@export PATH="${PATH}:$(go env GOPATH)/bin"
 
-	@echo "Temporarily disabling module-aware mode so that we can install linting tools without modifying this project's go.mod and go.sum files"
-	@export GO111MODULE="off"
-	go get -u golang.org/x/lint/golint
-	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
-	go get -u honnef.co/go/tools/cmd/staticcheck
-	@echo "Resetting GO111MODULE back to the default"
-	@export GO111MODULE=""
+	@echo "Explicitly enabling Go modules mode"
+	@export GO111MODULE="on"
+	go get golang.org/x/lint/golint
+	go get github.com/golangci/golangci-lint/cmd/golangci-lint
+	go get honnef.co/go/tools/cmd/staticcheck
 	@echo "Finished updating linting tools"
 
 .PHONY: linting
