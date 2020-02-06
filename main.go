@@ -45,14 +45,14 @@ func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
 
 	p, err := loadPage(title)
 
-	createHTMLPageLinks(p)
-
-	// If the requested Page doesn't exist, redirect he client to the edit
+	// If the requested Page doesn't exist, redirect the client to the edit
 	// Page so the content may be created.
 	if err != nil {
 		http.Redirect(w, r, "/edit/"+title, http.StatusFound)
 		return
 	}
+	// If the Page DOES exist, substitute any Page references to HTML links
+	createHTMLPageLinks(p)
 	renderTemplate(w, "view", p)
 }
 
