@@ -10,6 +10,9 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
+
+	"github.com/microcosm-cc/bluemonday"
+	"gopkg.in/russross/blackfriday.v2"
 )
 
 // These directories reside in the same location as the running application
@@ -62,6 +65,8 @@ func frontPageHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// viewHandler performs any necessary conversion work between saved plain-text
+// (potentially Markdown) into HTML output.
 func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
 
 	p, err := loadPage(title)
@@ -72,8 +77,16 @@ func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
 		http.Redirect(w, r, "/edit/"+title, http.StatusFound)
 		return
 	}
-	// If the Page DOES exist, substitute any Page references to HTML links
+
+	// Since the Page exists perform conversion tasks on loaded data
+	processMarkdown(p)
+
+	// Intentionally perform inter-page linking after the Markdown to HTML
+	// conversion to reduce risk of improperly converting Markdown links to
+	// inter-page links.
 	createHTMLPageLinks(p)
+
+	// Send the results to the client
 	renderTemplate(w, "view", p)
 }
 
@@ -148,6 +161,25 @@ func createHTMLPageLinks(p *Page) {
 
 		return []byte(pageLink)
 	})
+
+}
+
+// processMarkdown runs a Markdown processor against the stored Page content
+// and replaces supported Markdown with HTML equivalents for display to
+// the client.
+func processMarkdown(p *Page) error {
+
+	// add protection against nil pointer deference
+	if p == nil {
+		return fmt.Errorf("aborting processing of nil pointer")
+	}
+
+	unsafe := blackfriday.Run(p.Body)
+	p.Body = bluemonday.UGCPolicy().SanitizeBytes(unsafe)
+
+	//	p.Body = blackfriday.Run(p.Body)
+
+	return nil
 
 }
 
