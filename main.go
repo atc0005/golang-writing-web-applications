@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,6 +11,9 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
+
+	"github.com/microcosm-cc/bluemonday"
+	"gopkg.in/russross/blackfriday.v2"
 )
 
 // These directories reside in the same location as the running application
@@ -153,10 +157,27 @@ func createHTMLPageLinks(p *Page) {
 
 func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
 
-	err := templates.ExecuteTemplate(w, tmpl+".html", p)
+	// TODO:
+	//
+	// 1) Setup an io.Writer compatible buffer to receive the templates
+	// 2) Point templates.ExecuteTemplate at it
+	// 3) unsafe := blackfriday.Run(input)
+	// 4) html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
+	// 5) Write "html" to "w"
+
+	var templateBuffer bytes.Buffer
+
+	err := templates.ExecuteTemplate(&templateBuffer, tmpl+".html", p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+
+	unsafe := blackfriday.Run(templateBuffer.Bytes())
+	html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
+
+	// Send converted content to client
+	fmt.Fprint(w, string(html))
+
 }
 
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
