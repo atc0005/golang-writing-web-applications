@@ -1,14 +1,28 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"regexp"
+	"strings"
 	"text/template"
 )
 
-var templates = template.Must(template.ParseFiles("edit.html", "view.html"))
+// These directories reside in the same location as the running application
+const dataDir string = "data"
+const tmplDir string = "tmpl"
+
+// Desired permissions on newly created data or templates directories
+const dirPerms os.FileMode = 0700
+
+var templates = template.Must(template.ParseFiles(
+	filepath.Join(tmplDir, "edit.html"),
+	filepath.Join(tmplDir, "view.html"),
+))
 
 // subexpression 1 is one of edit, save or view
 // subexpression 2 is the page title that we are editing, saving or viewing
@@ -21,14 +35,21 @@ type Page struct {
 }
 
 func (p *Page) save() error {
-	filename := p.Title + ".txt"
+	filename := filepath.Join(dataDir, p.Title+".txt")
+	if !pathExists(dataDir) {
+		if err := os.Mkdir(dataDir, dirPerms); err != nil {
+			return fmt.Errorf("unable to save page to %q: %s", filename, err)
+		}
+	}
 	return ioutil.WriteFile(filename, p.Body, 0600)
 }
 
 func loadPage(title string) (*Page, error) {
-	filename := title + ".txt"
+	filename := filepath.Join(dataDir, title+".txt")
+	//log.Println("filename:", filename)
 	body, err := ioutil.ReadFile(filename)
 	if err != nil {
+		log.Printf("error loading page %q: %s", filename, err)
 		return nil, err
 	}
 	return &Page{Title: title, Body: body}, nil
@@ -147,6 +168,25 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 		}
 		fn(w, r, m[2])
 	}
+}
+
+// pathExists confirms that the specified path exists
+func pathExists(path string) bool {
+
+	// Make sure path isn't empty
+	if strings.TrimSpace(path) == "" {
+		log.Println("path is empty string")
+		return false
+	}
+
+	// https://gist.github.com/mattes/d13e273314c3b3ade33f
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		//log.Println("path found")
+		return true
+	}
+
+	return false
+
 }
 
 func main() {
