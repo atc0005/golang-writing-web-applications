@@ -98,7 +98,7 @@ linting:
 		-E golint \
 		-E gocritic
 
-	echo "Running staticcheck ..."
+	@echo "Running staticcheck ..."
 	@staticcheck ./...
 
 	@echo "Finished running linting checks"
