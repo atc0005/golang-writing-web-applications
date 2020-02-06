@@ -11,6 +11,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/microcosm-cc/bluemonday"
 	"gopkg.in/russross/blackfriday.v2"
 )
 
@@ -173,10 +174,10 @@ func processMarkdown(p *Page) error {
 		return fmt.Errorf("aborting processing of nil pointer")
 	}
 
-	// unsafe := blackfriday.Run(p.Body)
-	// p.Body = bluemonday.UGCPolicy().SanitizeBytes(unsafe)
+	unsafe := blackfriday.Run(p.Body)
+	p.Body = bluemonday.UGCPolicy().SanitizeBytes(unsafe)
 
-	p.Body = blackfriday.Run(p.Body)
+	//	p.Body = blackfriday.Run(p.Body)
 
 	return nil
 
