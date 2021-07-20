@@ -24,7 +24,7 @@ jobs:
     steps:
       - name: Setup Node
         # https://github.com/actions/setup-node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2.2.0
         with:
           node-version: "lts/*"
 
@@ -34,10 +34,14 @@ jobs:
           npm install -g markdownlint-cli
 
       - name: Check out code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2.3.4
 
       - name: Run Markdown linting tools
+        # The `.markdownlint.yml` file specifies config settings for this
+        # linter, including which linting rules to ignore.
+        #
+        # Note: Explicitly ignoring top-level vendor folder; we do not want
+        # potential linting issues in bundled documentation to fail linting CI
+        # runs for *our* documentation
         run: |
-          # The `.markdownlint.yml` file specifies config settings for this
-          # linter, including which linting rules to ignore.
-          markdownlint '**/*.md' --ignore node_modules
+          markdownlint '**/*.md' --ignore node_modules --ignore vendor
