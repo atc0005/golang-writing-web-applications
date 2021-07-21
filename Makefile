@@ -51,53 +51,34 @@ help:
 
 .PHONY: lintinstall
 ## lintinstall: install common linting tools
+# https://github.com/golang/go/issues/30515#issuecomment-582044819
 lintinstall:
 	@echo "Installing linting tools"
 
 	@export PATH="${PATH}:$(go env GOPATH)/bin"
 
-	@echo "Explicitly enabling Go modules mode"
-	@export GO111MODULE="on"
-	go get golang.org/x/lint/golint
-	go get github.com/golangci/golangci-lint/cmd/golangci-lint
-	go get honnef.co/go/tools/cmd/staticcheck
+	@echo "Explicitly enabling Go modules mode per command"
+	(cd; GO111MODULE="on" go get honnef.co/go/tools/cmd/staticcheck)
+
+	@echo Installing latest stable golangci-lint version per official installation script ...
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin
+	golangci-lint --version
+
 	@echo "Finished updating linting tools"
 
 .PHONY: linting
 ## linting: runs common linting checks
-# https://stackoverflow.com/a/42510278/903870
 linting:
 	@echo "Running linting tools ..."
 
-	@echo "Running gofmt ..."
-
-	@test -z $(shell gofmt -l -e .) || (echo "WARNING: gofmt linting errors found" \
-		&& gofmt -l -e -d . \
-		&& exit 1 )
-
 	@echo "Running go vet ..."
-	@go vet ./...
-
-	@echo "Running golint ..."
-	@golint -set_exit_status ./...
+	@go vet -mod=vendor $(shell go list -mod=vendor ./... | grep -v /vendor/)
 
 	@echo "Running golangci-lint ..."
-	@golangci-lint run \
-		-E goimports \
-		-E gosec \
-		-E stylecheck \
-		-E goconst \
-		-E depguard \
-		-E prealloc \
-		-E misspell \
-		-E maligned \
-		-E dupl \
-		-E unconvert \
-		-E golint \
-		-E gocritic
+	@golangci-lint run
 
 	@echo "Running staticcheck ..."
-	@staticcheck ./...
+	@staticcheck $(shell go list -mod=vendor ./... | grep -v /vendor/)
 
 	@echo "Finished running linting checks"
 
@@ -105,7 +86,7 @@ linting:
 ## gotests: runs go test recursively, verbosely
 gotests:
 	@echo "Running go tests ..."
-	@go test ./...
+	@go test -mod=vendor ./...
 	@echo "Finished running go tests"
 
 .PHONY: goclean

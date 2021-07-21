@@ -40,8 +40,8 @@ jobs:
         run: make lintinstall
 
       # NOTE: We are intentionally *not* removing the repo-provided config
-      # file (per GH-281) as this workflow is intended to emulate running the
-      # Makefile via a local dev environment.
+      # file as this workflow is intended to emulate running the Makefile via
+      # a local dev environment.
       #
       # - name: Remove repo-provided golangci-lint config file
       #   run: |
