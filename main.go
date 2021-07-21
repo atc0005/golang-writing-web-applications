@@ -12,7 +12,7 @@ import (
 	"text/template"
 
 	"github.com/microcosm-cc/bluemonday"
-	"gopkg.in/russross/blackfriday.v2"
+	"github.com/russross/blackfriday/v2"
 )
 
 // These directories reside in the same location as the running application
