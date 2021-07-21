@@ -67,8 +67,8 @@ func (p *Page) save() error {
 
 func loadPage(title string) (*Page, error) {
 	filename := filepath.Join(dataDir, title+".txt")
-	//log.Println("filename:", filename)
-	body, err := ioutil.ReadFile(filename)
+	// log.Println("filename:", filename)
+	body, err := ioutil.ReadFile(filepath.Clean(filename))
 	if err != nil {
 		log.Printf("error loading page %q: %s", filename, err)
 		return nil, err
@@ -78,7 +78,7 @@ func loadPage(title string) (*Page, error) {
 
 // frontPageHandler redirects requests for / to /view/FrontPage
 func frontPageHandler(w http.ResponseWriter, r *http.Request) {
-	//log.Println("frontPageHandler triggered")
+	// log.Println("frontPageHandler triggered")
 	http.Redirect(w, r, "/view/FrontPage", http.StatusFound)
 }
 
@@ -135,7 +135,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	// to match the struct field type
 	p := &Page{Title: title, Body: []byte(body)}
 
-	//createWikiPageLinks(p)
+	// createWikiPageLinks(p)
 
 	err := p.save()
 	if err != nil {
@@ -238,7 +238,7 @@ func pathExists(path string) bool {
 
 	// https://gist.github.com/mattes/d13e273314c3b3ade33f
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		//log.Println("path found")
+		// log.Println("path found")
 		return true
 	}
 
